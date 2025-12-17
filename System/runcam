@@ -1,0 +1,92 @@
+import cv2
+from ultralytics import YOLO
+from deep_sort_realtime.deepsort_tracker import DeepSort
+
+def main():
+    # 1. Load YOUR custom trained model
+    # Make sure 'best.pt' is in the same folder as this script
+    model = YOLO("best.pt") 
+    
+    # 2. Initialize the Tracker
+    # max_age=30 means it remembers a lost ID for 30 frames (about 1 second)
+    tracker = DeepSort(max_age=30)
+
+    # 3. Open Webcam
+    cap = cv2.VideoCapture(0)
+
+    # Dictionary to remember who is who: { Track_ID: Name }
+    # This is the "Identity Persistence" (Memory)
+    track_history = {}
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # --- A. DETECTION ---
+        # Run your custom YOLO model on the frame
+        results = model(frame, stream=True, verbose=False)
+
+        detections = []
+        for result in results:
+            for box in result.boxes:
+                # Get the box coordinates
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                conf = float(box.conf[0])
+                cls_id = int(box.cls[0])
+                
+                # Get the name (Aum, Jiw, or Prem) directly from the model
+                detected_name = model.names[cls_id]
+
+                # Filter: Only accept if confidence is high (> 50%)
+                if conf > 0.5:
+                    w = x2 - x1
+                    h = y2 - y1
+                    # Append to list for the tracker
+                    # Format: [[x, y, w, h], confidence, Class_Name]
+                    detections.append([[x1, y1, w, h], conf, detected_name])
+
+        # --- B. TRACKING ---
+        # Update tracker with the new detections
+        tracks = tracker.update_tracks(detections, frame=frame)
+
+        for track in tracks:
+            if not track.is_confirmed():
+                continue
+
+            track_id = track.track_id
+            ltrb = track.to_ltrb() # Get left-top-right-bottom
+            x1, y1, x2, y2 = map(int, ltrb)
+
+            # Get the class name associated with this track
+            # If the tracker loses the specific class, it returns 'person' or None
+            # We use our 'track_history' to force it to remember "Aum" vs "Jiw"
+            
+            det_class = track.get_det_class()
+            
+            if det_class is not None and det_class in ['Aum', 'Jiw', 'Prem']:
+                # Update memory
+                track_history[track_id] = det_class
+                name_label = det_class
+            else:
+                # Retrieve from memory if currently unrecognized (e.g., mask on/turned away)
+                name_label = track_history.get(track_id, "Unknown")
+
+            # --- C. DRAWING ---
+            # Green box for known people, Red for unknown
+            color = (0, 255, 0) if name_label != "Unknown" else (0, 0, 255)
+            
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, f"{name_label} #{track_id}", (x1, y1 - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+
+        cv2.imshow('Security Cam - Custom Tracking', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()

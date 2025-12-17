@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['Aum', 'Jiw', 'Prem']
+
+roboflow:
+  workspace: mini-project-year3
+  project: securitycamera-fbg4p
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/mini-project-year3/securitycamera-fbg4p/dataset/2

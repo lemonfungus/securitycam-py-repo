@@ -1,0 +1,189 @@
+import cv2
+import datetime
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+from ultralytics import YOLO
+from deep_sort_realtime.deepsort_tracker import DeepSort
+
+class ModernSecurityUI:
+    def __init__(self, window):
+        self.window = window
+        self.window.title("Sentinel AI | Restricted Access Monitor")
+        self.window.geometry("1280x720")
+        
+        # --- THEME COLORS (Modern Dark Mode) ---
+        self.bg_color = "#121212"       # Almost black
+        self.sidebar_color = "#1E1E1E"  # Dark Grey
+        self.text_color = "#E0E0E0"     # Off-white
+        self.accent_color = "#03DAC6"   # Teal accent
+        self.alert_color = "#CF6679"    # Soft Red
+
+        self.window.configure(bg=self.bg_color)
+
+        # --- AI & LOGIC INIT ---
+        print("Initializing System...")
+        self.model = YOLO("best.pt") 
+        self.tracker = DeepSort(max_age=30)
+        self.track_history = {} 
+        
+        # LOGIC: Only log if this person is different from the last one logged
+        self.last_logged_name = None 
+
+        # --- LAYOUT SETUP ---
+        self.setup_ui()
+
+        # --- CAMERA START ---
+        self.cap = cv2.VideoCapture(0)
+        self.is_running = True
+        self.update_loop()
+
+    def setup_ui(self):
+        # 1. HEADER (Top Bar)
+        header = tk.Frame(self.window, bg=self.bg_color, height=50)
+        header.pack(fill=tk.X, padx=20, pady=10)
+        
+        tk.Label(header, text="🛡️ SENTINEL SECURITY", font=("Segoe UI", 18, "bold"), 
+                 bg=self.bg_color, fg=self.accent_color).pack(side=tk.LEFT)
+        
+        self.time_label = tk.Label(header, text="00:00:00", font=("Consolas", 14), 
+                                   bg=self.bg_color, fg=self.text_color)
+        self.time_label.pack(side=tk.RIGHT)
+
+        # 2. MAIN CONTENT (Video + Sidebar)
+        content = tk.Frame(self.window, bg=self.bg_color)
+        content.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        # [LEFT] Video Feed Container
+        video_frame = tk.Frame(content, bg="black", bd=2, relief="flat")
+        video_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.video_label = tk.Label(video_frame, bg="black")
+        self.video_label.pack(fill=tk.BOTH, expand=True)
+
+        # [RIGHT] Sidebar (Logs & Controls)
+        sidebar = tk.Frame(content, bg=self.sidebar_color, width=350, bd=0)
+        sidebar.pack(side=tk.RIGHT, fill=tk.Y, padx=(20, 0))
+        sidebar.pack_propagate(False) # Force width
+
+        # > Log Title
+        tk.Label(sidebar, text="ENTRY LOG", font=("Segoe UI", 12, "bold"), 
+                 bg=self.sidebar_color, fg="#888888").pack(anchor="w", padx=15, pady=(15, 5))
+
+        # > The Listbox (Modern Style)
+        self.log_list = tk.Listbox(sidebar, bg="#252526", fg=self.text_color, 
+                                   font=("Consolas", 11), bd=0, highlightthickness=0, height=25)
+        self.log_list.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+
+        # > EXIT BUTTON (Big Red Button)
+        btn_exit = tk.Button(sidebar, text="⛔ SHUT DOWN SYSTEM", font=("Segoe UI", 11, "bold"),
+                             bg=self.alert_color, fg="white", activebackground="#B00020",
+                             bd=0, padx=10, pady=10, cursor="hand2",
+                             command=self.close_app)
+        btn_exit.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=20)
+
+    def log_entry(self, name):
+        """Logic: Only log if 'name' is different from the last logged person."""
+        if name != self.last_logged_name:
+            timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+            log_text = f"[{timestamp}] ▸ {name}"
+            
+            self.log_list.insert(0, log_text) # Insert at TOP
+            
+            # Color coding (Optional: Highlight Aum/Jiw/Prem vs Unknown)
+            if name == "Unknown":
+                self.log_list.itemconfig(0, {'fg': self.alert_color})
+            else:
+                self.log_list.itemconfig(0, {'fg': self.accent_color})
+            
+            # Update memory
+            self.last_logged_name = name
+
+    def update_loop(self):
+        # Update Clock
+        current_time = datetime.datetime.now().strftime("%A %H:%M:%S")
+        self.time_label.config(text=current_time)
+
+        if not self.is_running:
+            return
+
+        ret, frame = self.cap.read()
+        if ret:
+            # --- AI PROCESSING ---
+            results = self.model(frame, stream=True, verbose=False)
+            detections = []
+
+            for result in results:
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    conf = float(box.conf[0])
+                    cls_id = int(box.cls[0])
+                    detected_name = self.model.names[cls_id]
+
+                    if conf > 0.5:
+                        w = x2 - x1
+                        h = y2 - y1
+                        detections.append([[x1, y1, w, h], conf, detected_name])
+
+            tracks = self.tracker.update_tracks(detections, frame=frame)
+            
+            present_names = [] # Who is in the screen RIGHT NOW?
+
+            for track in tracks:
+                if not track.is_confirmed(): continue
+                
+                track_id = track.track_id
+                ltrb = track.to_ltrb()
+                x1, y1, x2, y2 = map(int, ltrb)
+
+                # Identify
+                det_class = track.get_det_class()
+                name_label = "Unknown"
+                
+                if det_class in ['Aum', 'Jiw', 'Prem']:
+                    self.track_history[track_id] = det_class
+                    name_label = det_class
+                else:
+                    name_label = self.track_history.get(track_id, "Unknown")
+                
+                present_names.append(name_label)
+
+                # Draw Box
+                color = (3, 218, 198) if name_label != "Unknown" else (207, 102, 121) # Teal vs Red
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                
+                # Draw Name Tag with Background
+                label = f"{name_label} {track_id}"
+                (w_text, h_text), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
+                cv2.rectangle(frame, (x1, y1 - 25), (x1 + w_text, y1), color, -1)
+                cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 2)
+
+            # --- SMART LOGGING LOGIC ---
+            # If we see a known person, check if we need to log them
+            for person in present_names:
+                if person != "Unknown":
+                    self.log_entry(person)
+
+            # --- DISPLAY FRAME ---
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # Resize frame to fit the GUI properly if needed (optional)
+            # frame = cv2.resize(frame, (800, 600)) 
+
+            img = Image.fromarray(frame)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.video_label.imgtk = imgtk
+            self.video_label.configure(image=imgtk)
+
+        self.window.after(10, self.update_loop)
+
+    def close_app(self):
+        print("Shutting down system...")
+        self.is_running = False
+        self.cap.release()
+        self.window.destroy()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ModernSecurityUI(root)
+    root.mainloop()

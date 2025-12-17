@@ -1,0 +1,22 @@
+from ultralytics import YOLO
+
+def main():
+    # 1. Load the model
+    # It will use the local file if present, or download it if missing
+    model = YOLO('yolov8n.pt') 
+
+    # 2. Train the model
+    results = model.train(
+        # UPDATE THIS PATH to match your actual data.yaml location
+        data=r'dataset\data.yaml',
+        
+        epochs=50,
+        imgsz=640,
+        batch=8,        # Standard for 4GB VRAM
+        device=0,       # Use your RTX 3050
+        workers=4,      # Standard CPU usage
+        name='my_training_run'
+    )
+
+if __name__ == '__main__':
+    main()
