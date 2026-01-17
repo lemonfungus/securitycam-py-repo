@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights (large files)
+ai_service/*.pt
+
+# Firebase credentials (SECURITY SENSITIVE)
+backend/firebase_key.json
+
+# Node.js
+node_modules/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
