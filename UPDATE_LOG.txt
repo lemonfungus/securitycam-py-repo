@@ -1,0 +1,52 @@
+# INCOGNITOVISION - Update Log
+
+## RDK X5 Deployment Update
+
+### Tasks Completed
+
+1. **Git Repository Update**
+   - Created `requirements.txt` for Python dependencies
+   - Created `README.md` with project documentation
+   - Added `deploy_rdk.sh` deployment script
+   - Updated `ai_server.py` with CAMERA_SOURCE environment variable
+
+2. **RDK X5 Board Setup**
+   - Connected via SSH (sunrise@192.168.1.185)
+   - Tested camera - Pi Camera V2 works on /dev/video8
+   - Installed Node.js and npm on board
+   - Copied all project files (ai_service, backend, frontend)
+
+3. **Camera Configuration**
+   - Discovered camera works on video8 (not video0)
+   - Resolution: 640x480
+   - Use: export CAMERA_SOURCE=8
+
+### Hardware
+- Board: RDK X5 (8GB)
+- Camera: Raspberry Pi 8MP Camera Module V2
+- OS: Ubuntu 22.04
+
+### How to Run on RDK X5
+
+```bash
+# SSH into board
+ssh sunrise@192.168.1.185
+
+# Start AI Service
+cd /home/sunrise/ai_service
+export CAMERA_SOURCE=8
+python3 ai_server.py
+
+# Start Backend (new terminal)
+cd /home/sunrise/backend
+node server.js
+
+# Start Frontend (new terminal)
+cd /home/sunrise/frontend
+npm run dev -- --host 0.0.0.0
+```
+
+### Access URLs (from PC browser)
+- Frontend: http://192.168.1.185:5173
+- Video Feed: http://192.168.1.185:5000/video_feed
+- Backend API: http://192.168.1.185:3000
