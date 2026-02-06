@@ -1,3 +1,4 @@
+import os
 from flask import Flask, Response
 from flask_cors import CORS
 import cv2
@@ -7,6 +8,15 @@ from ultralytics import YOLO
 
 app = Flask(__name__)
 CORS(app)
+
+# Camera source configuration
+# For RDK X5 with Pi Camera V2, use: CAMERA_SOURCE=/dev/video0 or CAMERA_SOURCE=0
+# For USB webcam, use: CAMERA_SOURCE=0
+CAMERA_SOURCE = os.environ.get('CAMERA_SOURCE', '0')
+try:
+    CAMERA_SOURCE = int(CAMERA_SOURCE)
+except ValueError:
+    pass  # Keep as string path for device files
 
 # Load your trained model for known faces
 model = YOLO("best1_9.pt")  # New model from training epoch 138
@@ -92,7 +102,7 @@ def send_alert(alert_data):
 
 def generate_frames():
     global tracker
-    cap = cv2.VideoCapture(0) 
+    cap = cv2.VideoCapture(CAMERA_SOURCE) 
     frame_cnt = 0
     last_cleanup = time.time()
     
