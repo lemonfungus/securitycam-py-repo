@@ -1,5 +1,24 @@
 # INCOGNITOVISION - Update Log
 
+## 8/2/2026
+
+### NPU Deployment (RDK X5)
+- **Status**: ✅ NPU Active (30 FPS)
+- **Model**: 
+  - `yolov8_640x640_nv12.bin` (Generic)
+  - `best1_9_bayese_640x640_nv12.bin` (Custom - Ready)
+- **Files Created**:
+  - `ai_service/ai_server_npu.py`: NPU-accelerated AI server
+  - `ai_service/test_npu.py`: NPU benchmark script
+  - `ai_service/best1_9.onnx`: Exported ONNX model
+  - `ai_service/best1_9_bayese_640x640_nv12.bin`: Converted NPU model
+- **Performance**:
+  - CPU: 5-10 FPS
+  - NPU: 30 FPS (7.4ms inference)
+- **Next Steps**:
+  - Deploy `best1_9_bayese_640x640_nv12.bin` to board
+  - Update `ai_server_npu.py` with custom classes
+
 ## 7/2/2026 - RDK X5 Deployment Update
 
 ### Tasks Completed
