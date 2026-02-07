@@ -1,71 +1,63 @@
 # INCOGNITOVISION - Update Log
 
-## 8/2/2026
+## 7-8/2/2026 - RDK X5 Full Stack Deployment
 
-### NPU Deployment (RDK X5)
-- **Status**: ✅ NPU Active (30 FPS)
-- **Model**: 
-  - `yolov8_640x640_nv12.bin` (Generic)
-  - `best1_9_bayese_640x640_nv12.bin` (Custom - Ready)
-- **Files Created**:
-  - `ai_service/ai_server_npu.py`: NPU-accelerated AI server
-  - `ai_service/test_npu.py`: NPU benchmark script
-  - `ai_service/best1_9.onnx`: Exported ONNX model
-  - `ai_service/best1_9_bayese_640x640_nv12.bin`: Converted NPU model
-- **Performance**:
-  - CPU: 5-10 FPS
-  - NPU: 30 FPS (7.4ms inference)
-- **Next Steps**:
-  - Deploy `best1_9_bayese_640x640_nv12.bin` to board
-  - Update `ai_server_npu.py` with custom classes
+### 🚀 Major Milestone: NPU Acceleration
+Successfully deployed the full AI security system on the RDK X5 board, leveraging the **10 TOPS NPU** for real-time performance.
 
-## 7/2/2026 - RDK X5 Deployment Update
+| Metric | CPU Implementation | NPU Implementation |
+|--------|-------------------|--------------------|
+| **Inference Time** | ~100-200ms | **7.4ms** |
+| **Video FPS** | 5-10 FPS | **30 FPS** |
+| **Model** | YOLOv8 (PyTorch) | YOLOv8 (Horizon BPU .bin) |
 
-### Tasks Completed
+### ✅ Deployment Checklist
 
-1. **Git Repository Update**
-   - Created `requirements.txt` for Python dependencies
-   - Created `README.md` with project documentation
-   - Added `deploy_rdk.sh` deployment script
-   - Updated `ai_server.py` with CAMERA_SOURCE environment variable
+#### 1. RDK X5 Board Setup
+- **OS**: Ubuntu 22.04 (Horizon RDK)
+- **Connectivity**: SSH Key authentication (`sunrise@172.20.10.2`)
+- **Dependencies**: Installed Node.js, Python 3.10, `hobot_dnn`, `numpy<2`
 
-2. **RDK X5 Board Setup**
-   - Connected via SSH (sunrise@192.168.1.185)
-   - Tested camera - Pi Camera V2 works on /dev/video8
-   - Installed Node.js and npm on board
-   - Copied all project files (ai_service, backend, frontend)
+#### 2. Hardware Configuration
+- **Camera**: Raspberry Pi Camera V2 (8MP)
+- **Interface**: MIPI CSI (`/dev/video8`)
+- **Resolution**: 640x480 (Optimized for NPU input)
 
-3. **Camera Configuration**
-   - Discovered camera works on video8 (not video0)
-   - Resolution: 640x480
-   - Use: export CAMERA_SOURCE=8
+#### 3. AI Model Conversion
+- **Generic Model**: Validated pre-installed `yolov8_640x640_nv12.bin` (30 FPS)
+- **Custom Model**: 
+  - Exported `best1_9.pt` (Aum/Prem/Auto) to ONNX
+  - Converted ONNX to `.bin` using Horizon Toolchain (Docker)
+  - Result: `ai_service/best1_9_bayese_640x640_nv12.bin`
 
-### Hardware
-- Board: RDK X5 (8GB)
-- Camera: Raspberry Pi 8MP Camera Module V2
-- OS: Ubuntu 22.04
+#### 4. New Files & Scripts
+- `ai_service/ai_server_npu.py`: High-performance NPU inference server
+- `ai_service/test_npu.py`: Benchmark script
+- `deploy_rdk.sh`: Automated deployment script
 
-### How to Run on RDK X5
+### 🔧 How to Run (on RDK X5)
 
 ```bash
 # SSH into board
-ssh sunrise@192.168.1.185
+ssh sunrise@172.20.10.2
 
-# Start AI Service
-cd /home/sunrise/ai_service
+# 1. Start NPU AI Service
+cd /home/sunrise/Project/ai_service
 export CAMERA_SOURCE=8
-python3 ai_server.py
+python3 ai_server_npu.py &
 
-# Start Backend (new terminal)
-cd /home/sunrise/backend
-node server.js
+# 2. Start Backend
+cd /home/sunrise/Project/backend
+node server.js &
 
-# Start Frontend (new terminal)
-cd /home/sunrise/frontend
-npm run dev -- --host 0.0.0.0
+# 3. Start Frontend
+cd /home/sunrise/Project/frontend
+npm run dev -- --host 0.0.0.0 &
 ```
 
-### Access URLs (from PC browser)
-- Frontend: http://192.168.1.185:5173
-- Video Feed: http://192.168.1.185:5000/video_feed
-- Backend API: http://192.168.1.185:3000
+### 🌐 Access Points
+- **Frontend Dashboard**: http://172.20.10.2:5173
+- **Live Video Feed**: http://172.20.10.2:5000/video_feed
+- **Backend API**: http://172.20.10.2:3000
+
+---
