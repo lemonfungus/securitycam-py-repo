@@ -1,0 +1,28 @@
+# SecurityCam Project
+
+## Ignore datasets and models (large files)
+Trainscript/model3.*/
+Trainscript/runs/
+*.pt
+*.onnx
+*.bin
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Known faces (personal data)
+known_faces/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.log

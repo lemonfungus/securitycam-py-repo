@@ -1,0 +1,79 @@
+from ultralytics import YOLO
+
+def main():
+    # =====================================================
+    # MAXIMUM ACCURACY - OVERNIGHT TRAINING
+    # =====================================================
+    
+    # Using yolov8n for Raspberry Pi deployment
+    model = YOLO('yolov8n.pt')
+
+    # Train with MAXIMUM accuracy settings (overnight run)
+    results = model.train(
+        data=r"C:\Users\praml\Desktop\SecurityCam\Trainscript\model3.v5i.yolov8\data.yaml",
+        
+        # --- Core Training Settings (MAXED OUT) ---
+        epochs=500,              # Maximum epochs for overnight training
+        imgsz=640,               # Standard resolution
+        batch=16,                # RTX 3050 can handle 16 with AMP
+        device=0,
+        workers=0,               # Set to 0 to fix Windows shared memory error
+        
+        # --- Learning Rate & Optimizer (Fine-tuned) ---
+        optimizer='AdamW',       # Better than SGD for smaller datasets
+        lr0=0.001,               # Initial learning rate
+        lrf=0.01,                # Final LR = lr0 * lrf (cosine scheduler)
+        momentum=0.937,
+        weight_decay=0.0005,
+        warmup_epochs=10,        # Longer warmup for stability
+        
+        # --- Data Augmentation (MAXIMUM - to fix clothing color bias) ---
+        augment=True,
+        hsv_h=0.5,               # MAXIMUM hue shift - changes all colors!
+        hsv_s=1.0,               # MAXIMUM saturation - can desaturate to near B&W!
+        hsv_v=0.5,               # Balanced brightness variation
+        bgr=0.5,                 # 50% BGR shuffle - forces model to ignore colors
+        degrees=20,              # Rotation ±20° (increased)
+        translate=0.2,           # Translation ±20%
+        scale=0.5,               # Scale ±50%
+        shear=10,                # Shear ±10° (increased)
+        perspective=0.001,       # Perspective transform (increased)
+        flipud=0.1,              # Vertical flip (10% chance)
+        fliplr=0.5,              # Horizontal flip (50% chance)
+        mosaic=1.0,              # Mosaic augmentation (always on)
+        mixup=0.15,              # Mixup augmentation (reduced for small dataset)
+        copy_paste=0.1,          # Copy-paste augmentation
+        erasing=0.3,             # Random erasing (50% was too aggressive)
+        
+        # --- Regularization (Strong) ---
+        label_smoothing=0.1,     # Prevents overconfidence
+        dropout=0.15,            # Increased dropout
+        
+        # --- Training Efficiency ---
+        amp=True,                # Mixed precision
+        cache=False,             # Disabled for Windows compatibility
+        patience=50,             # Early stop if no improvement for 50 epochs
+        
+        # --- Validation & Saving ---
+        val=True,
+        save=True,
+        save_period=50,          # Save checkpoint every 50 epochs
+        plots=True,              # Generate training plots
+        
+        # --- Advanced Training Techniques ---
+        rect=False,              # Disable rectangular training
+        cos_lr=True,             # Cosine learning rate scheduler
+        close_mosaic=50,         # Disable mosaic for last 50 epochs (more stable)
+        multi_scale=True,        # Multi-scale training (CRITICAL for accuracy!)
+        
+        # --- Project Settings ---
+        project='runs/train',
+        name='grayscale_v5_run',
+        exist_ok=True,
+    )
+    
+        
+    
+
+if __name__ == '__main__':
+    main()
