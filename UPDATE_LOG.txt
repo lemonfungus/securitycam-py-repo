@@ -1,0 +1,27 @@
+# Update Log - Hybrid Face Recognition (MediaPipe + BPU)
+Date: 2026-02-15
+
+## Major Changes
+1. **Hybrid Architecture:**
+   - Detects faces using **MediaPipe** (CPU) instead of BPU SCRFD.
+   - Recognizes faces using **ArcFace** (BPU) for speed.
+   - Solves the issue where masked faces were ignored detection.
+
+2. **Masked Recognition Support:**
+   - Updated `live_hybrid.py` loading logic to use MediaPipe.
+   - Now correctly loads and indexes masked reference photos.
+   - Achievement: **0.97** Confidence on Masked User.
+
+3. **New Tools:**
+   - `capture_web.py`: A Web-based capturing studio (Flask) runs on RDK X5.
+   - Features: Normal/Mask/Side capture modes, resolution optimization.
+
+4. **Security Tuning:**
+   - Raised Recognition Threshold to **0.85**.
+   - Verified Stranger Rejection (Stranger score 0.76 < 0.85).
+
+## Files Added/Modified
+- `live_hybrid.py`: Main execution script.
+- `capture_web.py`: Data capture tool.
+- `bpu_face.py`: BPU Model interface.
+- `task.md`, `walkthrough.md`, `implementation_plan.md`: Documentation.

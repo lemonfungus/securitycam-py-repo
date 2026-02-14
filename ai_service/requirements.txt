@@ -1,0 +1,8 @@
+# AI Security Camera - Python Dependencies
+# For RDK X5 deployment with Raspberry Pi Camera V2
+
+flask>=2.0.0
+flask-cors>=3.0.0
+opencv-python>=4.5.0
+ultralytics>=8.0.0
+requests>=2.25.0

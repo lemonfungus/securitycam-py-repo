@@ -3,6 +3,8 @@
 ## Ignore datasets and models (large files)
 Trainscript/model3.*/
 Trainscript/runs/
+model*/
+runs/
 *.pt
 *.onnx
 *.bin
@@ -18,6 +20,8 @@ __pycache__/
 
 # Known faces (personal data)
 known_faces/
+captured_dataset/
+dataset/
 
 # OS
 .DS_Store
